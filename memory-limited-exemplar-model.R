@@ -34,8 +34,20 @@
 sample.training.data <- data.frame(x=c(0.5,0.6), y=c(0.4,0.3), category=c(1,2))
 
 exemplar.memory.limited <- function(training.data, x.val, y.val, target.category, sensitivity, decay.rate){
-  return(NA)
-}
+  td <- training.data
+  td$weight <- sapply(seq(from= (nrow(training.data) -1), to= 0, by= -1), 
+                                 function(position){1*decay.rate^position})
+  td$distance <- mapply(function(x, y){return (sqrt((x-x.val)^2 + (y-y.val)^2 ))}, 
+                                   td$x, td$y)
+  td$similarity <- sapply(td$distance, 
+                                     function(distance){return(exp(-sensitivity*distance))})
+  td$memory.weighted.similarity <- mapply(function(similarity, weight){return(similarity*weight)},
+                                          td$similarity, td$weight)
+  predicted.probability <- sum(subset(td, category==target.category)$memory.weighted.similarity)/
+    sum(td$memory.weighted.similarity)
+  return(predicted.probability)
+  }
+    
 
 # Once you have the model implemented, write the log-likelihood function for a set of data.
 # The set of data for the model will look like this:
@@ -53,6 +65,7 @@ sample.data.set[0:3,]
 
 sample.data.set[4,]
 
+
 # So, you need to treat each row of all.data as a test item, and find the training set for it
 # to give to your model. It may be easier to do this with a for loop than mapply(), though it
 # is certainly possible with both. (For mapply, pass it the row number that you are on...)
@@ -60,5 +73,9 @@ sample.data.set[4,]
 # Don't forget that decay rate should be between 0 and 1, and that sensitivity should be > 0.
 
 exemplar.memory.log.likelihood <- function(all.data, sensitivity, decay.rate){
-  return(NA)
+  for(i in 1: nrow(all.data)){
+    exemplar.memory.limited(all.data[0:(i-1),], all.data$x[i], all.data$y[i], all.data$category, sensitivity, decay.rate)
+  }
+
+  return(sum())
 }
