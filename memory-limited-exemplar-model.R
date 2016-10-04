@@ -71,15 +71,16 @@ sample.data.set[4,]
 # Don't forget that decay rate should be between 0 and 1, and that sensitivity should be > 0.
 
 exemplar.memory.log.likelihood <- function(all.data, sensitivity, decay.rate){
-  if ((decay.rate > 1) && (decay.rate < 0) && (sensitivity < 0)){
+  if ((decay.rate > 1) || (decay.rate < 0) || (sensitivity < 0)){
     return(NA)}
-  all.data$predicted.prob <- for(i in 1: nrow(all.data)){
-    if (i == 1){return(.5)}
-    else { if (all.data$correct == TRUE){
-      exemplar.memory.limited(all.data[0:(i-1),], all.data$x[i], all.data$y[i], all.data$category, sensitivity, decay.rate)}
-      else {return (1- exemplar.memory.limited(all.data[0:(i-1),], all.data$x[i], all.data$y[i], all.data$category, sensitivity, decay.rate))} 
-    }
+  all.data$predicted.prob <- .5
+    for(i in 2: nrow(all.data)){
+    if (all.data$correct[i] == TRUE){
+      all.data$predicted.prob[i] <-exemplar.memory.limited(all.data[0:(i-1),], all.data$x[i], all.data$y[i], all.data$category[i], sensitivity, decay.rate)}
+      else {all.data$predicted.prob[i] <- (1- exemplar.memory.limited(all.data[0:(i-1),], all.data$x[i], all.data$y[i], all.data$category[i], sensitivity, decay.rate))} 
     i <- i + 1
   }
-  return(sum(log(all.data)))
+  return(sum(log(all.data$predicted.prob)))
 }
+
+exemplar.memory.log.likelihood(all.data, .4, .2)
